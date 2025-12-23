@@ -30,7 +30,7 @@ app.use(
 );
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3002', "https://distenda.netlify.app", "https://distenda-admin.netlify.app"],
+  origin: ['http://localhost:3000', 'http://localhost:3002', "https://distenda.netlify.app", "https://distenda-admin.netlify.app", "https://distenda.vercel.app"],
   credentials: true // Cho phép gửi cookies
 }));
 app.use(methodOverride("_method"));
@@ -79,7 +79,7 @@ const io = require('socket.io')(app.listen(port, () => {
   console.log(`🚀 Server with Socket.IO is running on port ${port}`);
 }), {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:3002", "https://distenda.netlify.app", "https://distenda-admin.netlify.app"],
+    origin: ["http://localhost:3000", "http://localhost:3002", "https://distenda.netlify.app", "https://distenda-admin.netlify.app", "https://distenda.vercel.app/"],
     methods: ["GET", "POST"],
     credentials: true
   }
