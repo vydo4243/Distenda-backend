@@ -16,7 +16,7 @@ module.exports.index = async (req, res) => {
   })
   const intructor = await Admin.find({
     AdminDeleted: 1,
-    AdminRole_id: role.id
+    AdminRole_id: role._id
   }).sort({ _id: -1 }).limit(6);
   res.json({
     courses: courses,

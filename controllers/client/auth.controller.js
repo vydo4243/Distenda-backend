@@ -40,7 +40,7 @@ module.exports.loginGoogle = async (req, res) => {
     res.cookie("user_token", user.UserToken, {
       secure: true,
       httpOnly: false,
-      sameSite: 'None',
+      sameSite: "None",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -56,12 +56,12 @@ module.exports.loginGoogle = async (req, res) => {
   }
 };
 
-//Xử lý đăng nhập Google
+//Xử lý đăng nhập Facebook
 const axios = require("axios");
 
 module.exports.loginFacebook = async (req, res) => {
   const { accessToken, userID } = req.body;
-  console.log(req.body)
+  console.log(req.body);
   try {
     // Gọi API Facebook để lấy thông tin user
     const fbRes = await axios.get(`https://graph.facebook.com/${userID}`, {
@@ -87,7 +87,7 @@ module.exports.loginFacebook = async (req, res) => {
     res.cookie("user_token", user.UserToken, {
       secure: true,
       httpOnly: false,
-      sameSite: 'None',
+      sameSite: "None",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -163,7 +163,7 @@ module.exports.loginPost = async (req, res) => {
   res.cookie("user_token", user.UserToken, {
     secure: true,
     httpOnly: false,
-    sameSite: 'None',
+    sameSite: "None",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
   // req.flash("success", "Đăng nhập thành công!");
@@ -181,7 +181,7 @@ module.exports.logout = (req, res) => {
   res.clearCookie("user_token", {
     secure: true,
     httpOnly: false,
-    sameSite: 'None',
+    sameSite: "None",
   });
 
   // res.redirect(`/auth/login`);
@@ -235,7 +235,7 @@ module.exports.registerPost = async (req, res) => {
   res.cookie("user_token", user.UserToken, {
     secure: true,
     httpOnly: false,
-    sameSite: 'None',
+    sameSite: "None",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
   // req.flash("success", "Đăng ký thành công!");
@@ -258,61 +258,80 @@ module.exports.passwordForgot = async (req, res) => {
   });
 
   if (!user) {
-    res.json({
+    return res.json({
       code: 400,
       message: "Email không tồn tại!!!",
     });
-    return;
   }
   //
   const otp = generateHelper.generateRandomNumber(6);
   const objectForgotPw = {
     FPUserEmail: UserEmail,
     FPOTP: otp,
-    expireAt: Date.now(),
+    expireAt: Date.now() + 3 * 60 * 1000,
   };
   console.log(objectForgotPw);
   const forgotPw = new ForgotPassword(objectForgotPw);
   await forgotPw.save();
 
   //Tồn tại nên gửi Email
-  const Subject = "DISCENDA_Mã OTP xác minh lấy lại mật khẩu";
+  const Subject = "DISTENDA - Mã OTP xác minh lấy lại mật khẩu";
   const html = `
     <div><span style="font-family: 'times new roman', times, serif; font-size: 14pt; color: #000000;">Xin ch&agrave;o <strong>${user.UserFullName}</strong>,</span></div>
     <div>&nbsp;</div>
     <div><span style="font-family: 'times new roman', times, serif; font-size: 14pt; color: #000000;">Đ&acirc;y l&agrave; m&atilde; x&aacute;c nhận lấy lại mật khẩu của bạn:</span></div>
     <div><span style="font-size: 18pt; font-family: 'times new roman', times, serif; color: #000000;"><strong>${otp}</strong></span></div>
-    <div><span style="font-family: 'times new roman', times, serif; font-size: 14pt; color: #000000;">Thời hạn để sử dụng m&atilde; l&agrave; 10 ph&uacute;t.</span></div>
+    <div><span style="font-family: 'times new roman', times, serif; font-size: 14pt; color: #000000;">Thời hạn để sử dụng m&atilde; l&agrave; 3 ph&uacute;t.</span></div>
     <div><span style="font-family: 'times new roman', times, serif; font-size: 14pt; color: #000000;">Nếu bạn kh&ocirc;ng gửi y&ecirc;u cầu, h&atilde;y bỏ qua hộp thư n&agrave;y.</span></div>
     <p>&nbsp;</p>
     <div><span style="font-family: 'times new roman', times, serif; font-size: 14pt; color: #000000;">Xin cảm ơn,</span></div>
-    <div><span style="font-family: 'times new roman', times, serif; font-size: 14pt; color: #000000;"><strong>DISCENDA.</strong></span></div>
+    <div><span style="font-family: 'times new roman', times, serif; font-size: 14pt; color: #000000;"><strong>DISTENDA.</strong></span></div>
   `;
-  sendMailHelper.sendMail(UserEmail, Subject, html);
+  try {
+    await sendMailHelper.sendMail(UserEmail, Subject, html);
 
-  res.json({
-    code: 200,
-    message: "Gửi thành công!",
-  });
+    return res.json({
+      code: 200,
+      message: "Gửi thành công!",
+    });
+  } catch (error) {
+    console.error("Lỗi gửi mail:", error);
+
+    return res.json({
+      code: 500,
+      message: "Không thể gửi email. Vui lòng thử lại sau.",
+    });
+  }
 };
 
 // [POST] /auth/password/otp
 module.exports.passwordOTP = async (req, res) => {
   try {
-    const UserEmail = req.body.UserEmail
-    const UserOTP = req.body.UserOTP
-    console.log(UserEmail, UserOTP)
+    const UserEmail = req.body.UserEmail;
+    const UserOTP = req.body.UserOTP;
+    console.log(UserEmail, UserOTP);
 
     const result = await ForgotPassword.findOne({
       FPUserEmail: UserEmail,
-      FPOTP: UserOTP
-    })
+      FPOTP: UserOTP,
+    });
     if (!result) {
       res.json({
         code: 400,
-        message: "OTP không hợp lệ!"
-      })
+        message: "OTP không hợp lệ!",
+      });
       return;
+    }
+
+    const now = Date.now();
+    if (now > result.expireAt) {
+      // OTP hết hạn → xóa để tránh reuse
+      await ForgotPassword.deleteOne({ _id: result._id });
+
+      return res.json({
+        code: 400,
+        message: "OTP đã hết hạn! Vui lòng yêu cầu mã mới.",
+      });
     }
 
     const user = await User.findOne({
@@ -321,18 +340,24 @@ module.exports.passwordOTP = async (req, res) => {
     res.cookie("user_token", user.UserToken, {
       secure: true,
       httpOnly: false,
-      sameSite: 'None',
+      sameSite: "None",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    // Xóa OTP sau khi dùng thành công
+    await ForgotPassword.deleteOne({ _id: otpRecord._id });
+
     res.json({
       code: 200,
-      message: "OTP hợp lệ!"
-    })
+      message: "OTP hợp lệ! Đăng nhập thành công.",
+    });
   } catch (e) {
-    console.log(e)
+    console.error("Lỗi xác thực OTP:", error);
+    return res.json({
+      code: 500,
+      message: "Lỗi hệ thống. Vui lòng thử lại sau.",
+    });
   }
-
 };
 
 // [POST] /auth/password/new

@@ -1,27 +1,33 @@
-const nodemailer = require('nodemailer');
+import { Resend } from 'resend';
 
-module.exports.sendMail = (UserEmail, Subject, html) => {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.MAIL_NAME,
-      pass: process.env.MAIL_PASS
-    }
-  });
+export const sendMail = async (UserEmail, Subject, html) => {
+  console.log("=== BẮT ĐẦU GỬI EMAIL ===");
+  console.log("API Key tồn tại:", !!process.env.RESEND_API_KEY);
+  console.log("Key preview:", process.env.RESEND_API_KEY?.substring(0, 15) + "...");
 
-  const mailOptions = {
-    from: process.env.MAIL_NAME,
-    to: UserEmail,
-    subject: Subject,
-    html: html
-  };
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY không tồn tại! Kiểm tra .env và dotenv.config()");
+  }
 
-  transporter.sendMail(mailOptions, function (error, info) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Distenda <onboarding@resend.dev>', // Dùng tạm cái này để test
+      to: [UserEmail],
+      subject: Subject,
+      html: html,
+    });
+
     if (error) {
-      console.log(error);
-    } else {
-      console.log('Email sent: ' + info.response);
-      // do something useful
+      console.error("Resend trả về lỗi:", error);
+      throw error;
     }
-  });
-}
+
+    console.log("GỬI EMAIL THÀNH CÔNG! ID:", data.id);
+    return data;
+  } catch (error) {
+    console.error("LỖI CHI TIẾT KHI GỬI EMAIL:", error.message || error);
+    throw error;
+  }
+};
